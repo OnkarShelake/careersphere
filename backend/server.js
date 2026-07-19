@@ -157,10 +157,11 @@
 //     console.log(`guidance backend is running on port ${PORT}`);
 // });
 
-
+import dotenv from 'dotenv'
+dotenv.config();
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
+
 import connectDB from './config/db.js'
 import questionnaireRoutes from './routes/questionnaireRoutes.js'
 import authRoutes from './routes/authRoutes.js'
@@ -171,8 +172,8 @@ import Message from './models/Message.js';
 import { Server } from 'socket.io'
 import jwt from 'jsonwebtoken';
 import { createServer } from 'node:http'
+import aiRoutes from './routes/aiRoutes.js';
 
-dotenv.config()
 
 const app = express();
 const server = createServer(app);
@@ -216,6 +217,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api', recommendationRoutes);
 app.use('/api', userRoutes);
 
+app.use('/api/ai', aiRoutes); // added route for AI endpoints
+
+
+console.log("server api gemini key : ", process.env.GEMINI_API_KEY);
 
 //chat sockets and video sockets (offer, answer handleing)
 

@@ -9,7 +9,7 @@ const VideoCall = ({ roomId, isCaller, incomingOffer, earlyIceCandidates = [] })
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnection = useRef(null);
- const navigate = useNavigate();
+  const navigate = useNavigate();
   // Initialize queue with the early candidates caught by Chat.jsx
 
   const pendingCandidates = useRef([...earlyIceCandidates]);
@@ -17,13 +17,13 @@ const VideoCall = ({ roomId, isCaller, incomingOffer, earlyIceCandidates = [] })
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [stream, setStream] = useState(null);
-// function for mute and unmute
+  // function for mute and unmute
   const toggleMute = () => {
-    if(!stream) return;
-    if(isMuted){
+    if (!stream) return;
+    if (isMuted) {
       stream.getAudioTracks()[0].enabled = true;
     }
-    else{
+    else {
       stream.getAudioTracks()[0].enabled = false;
     }
     setIsMuted(!isMuted);
@@ -31,52 +31,52 @@ const VideoCall = ({ roomId, isCaller, incomingOffer, earlyIceCandidates = [] })
 
   // function to toggle camera
   const toggleCamera = async () => {
-    if(!stream) return ;
+    if (!stream) return;
 
     const videoTrack = stream.getVideoTracks()[0];
-    console.log("these are the video tracks:",videoTrack);
-     if (videoTrack) {
-    videoTrack.enabled = !videoTrack.enabled;
+    console.log("these are the video tracks:", videoTrack);
+    if (videoTrack) {
+      videoTrack.enabled = !videoTrack.enabled;
 
-    setIsCameraOff(!videoTrack.enabled);
+      setIsCameraOff(!videoTrack.enabled);
+    }
   }
-}
 
   //function for ending call
   // stopping the tracks of mentor side
   const endCall = () => {
-   
+
     stream?.getTracks().forEach((track) => track.stop());
 
     peerConnection.current?.close();
 
-    if(localVideoRef.current) localVideoRef.current.srcObject = null;
-    if(remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
     peerConnection.current = null;
 
     //this will used for listen for the user then when we listen this we will also navigate the user to home page after the endcall triggers
-    socket.emit("end-call",roomId);
+    socket.emit("end-call", roomId);
 
     setIsCameraOff(false);
     setIsMuted(false);
 
     navigate("/");
-   };
+  };
 
-   //listening the end-call signal in user side
-    useEffect(() => {
-      socket.on("end-call", () =>{
-        stream?.getTracks().forEach((track) => track.stop());
-        peerConnection.current?.close();
-        navigate("/");
-      });
-    
-      return () => {
-       socket.off("end-call");
-      }
-    }, [stream])
-    
+  //listening the end-call signal in user side
+  useEffect(() => {
+    socket.on("end-call", () => {
+      stream?.getTracks().forEach((track) => track.stop());
+      peerConnection.current?.close();
+      navigate("/");
+    });
+
+    return () => {
+      socket.off("end-call");
+    }
+  }, [stream])
+
 
   // Create PeerConnection
   useEffect(() => {
@@ -260,18 +260,16 @@ const VideoCall = ({ roomId, isCaller, incomingOffer, earlyIceCandidates = [] })
       <div className="flex justify-center items-center gap-4 p-5 bg-white border-t border-slate-200 shadow-sm flex-shrink-0">
         <button
           onClick={toggleMute}
-          className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors duration-200 shadow-sm ${
-            isMuted ? "bg-red-500 hover:bg-red-600 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
-          }`}
+          className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors duration-200 shadow-sm ${isMuted ? "bg-red-500 hover:bg-red-600 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+            }`}
         >
           {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
         </button>
 
         <button
           onClick={toggleCamera}
-          className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors duration-200 shadow-sm ${
-            isCameraOff ? "bg-red-500 hover:bg-red-600 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
-          }`}
+          className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors duration-200 shadow-sm ${isCameraOff ? "bg-red-500 hover:bg-red-600 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+            }`}
         >
           {isCameraOff ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
         </button>

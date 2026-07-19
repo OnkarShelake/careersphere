@@ -11,6 +11,7 @@ try {
         let token;
         if (req.headers.authorization.startsWith("Bearer")) {
             token = req.headers.authorization.split(' ')[1];
+            console.log("token from authmiddleware : ", token);
             try {
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 

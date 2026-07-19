@@ -9,6 +9,9 @@ import Recommendations from './pages/Recommendations.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Chat from './pages/Chat.jsx'
 import MentorDashboard from './pages/MentorDashboard.jsx'
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 function App() {
   
@@ -29,6 +32,7 @@ function App() {
         
       </Routes>
     </BrowserRouter>
+    <ToastContainer/>
 
     </>
      

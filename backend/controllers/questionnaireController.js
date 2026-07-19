@@ -4,11 +4,17 @@ import Response from '../models/Response.js';
 
 export const getQuestionsByLevel = async (req, res) => {
     try {
-        const level = req.params.level;
-        // fetch questions from database based on the level
-        // Example: const questions = await Question.find({ level });
-
+        const raw_level = req.params.level;
+        let level;
+        if(raw_level !== "engineering"){
+             level = raw_level.replace(/_/g," ");
+        }
+        else{
+           level = "engineering (Specialization)";
+        }
+        
         const questions = await Question.find({ level });
+        
         if(questions.length === 0) return res.status(404).json({message:"No questions found for this level"});
        
 

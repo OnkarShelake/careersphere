@@ -17,14 +17,18 @@ API.interceptors.request.use((req) => {
 
 // if token is expire or invalid , remove it and redirect to login page
 
-API.interceptors.response.use((res) => res, (err) => {
-    if (err.response && err.response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-        return Promise.reject(err);
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
     }
-});
+
+    return Promise.reject(error);
+  }
+);
 
 
 export default API;

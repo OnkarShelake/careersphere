@@ -15,10 +15,11 @@ export default function Signup() {
         const response = await API.post('/auth/register', formData);
         console.log(response);
         if(response.data && response.data.token){
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
+           await localStorage.setItem('token', response.data.token);
+           await localStorage.setItem('user', JSON.stringify(response.data.user));
+           
             alert('Registration successful!');
-            navigate('/level-selection');
+            navigate('/');
         }
         else{
             alert('Registration failed. Please try again.');

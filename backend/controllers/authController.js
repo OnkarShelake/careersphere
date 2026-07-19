@@ -6,7 +6,7 @@ export const registerUser = async (req, res) => {
     try {
         const { name , email, password} = req.body;
         
-
+        
         if(!name || !email || !password) return res.status(400).json({message:"Missing required fields"});
         
         //check if user already exists
@@ -22,12 +22,12 @@ export const registerUser = async (req, res) => {
             password: hashedPassword
         })
         
-
+        const userId = newUser._id;
         //assign a token to the user
 
         const token = jwt.sign({id:newUser._id, role:newUser.role}, process.env.JWT_SECRET, {expiresIn:'7d'});
 
-        return res.status(201).json({token , user:{name:newUser.name, email:newUser.email, role:newUser.role}});
+        return res.status(201).json({token , user:{id:userId,name:newUser.name, email:newUser.email, role:newUser.role}});
         
         
     } catch (error) {

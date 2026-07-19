@@ -50,11 +50,26 @@ export default function LevelSelection() {
       </div>
 
       {/* Continue Button */}
-      <div className="text-center pb-16">
+      
+      {/* <div className="text-center pb-16">
         <button onClick={()=> navigate(`/questions/${selectedLevel}`)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm">
           Continue
         </button>
-      </div>
+      </div> */}
+
+     { !selectedLevel ? (
+  <div className="text-center pb-16">
+    <button disabled className="bg-indigo-300 text-white px-8 py-3 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm cursor-not-allowed">
+      Continue
+    </button>
+  </div>
+) : (
+  <div className="text-center pb-16">
+    <button onClick={() => navigate(`/questions/${selectedLevel}`)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm">
+      Continue
+    </button>
+  </div>
+)}
 
     </div>
   );

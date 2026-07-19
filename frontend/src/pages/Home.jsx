@@ -38,9 +38,48 @@ export default function Home() {
           Personalized guidance based on your interests, skills, and goals.
         </p>
 
-        <button onClick={handleGetStarted} className="mt-8 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm">
-          Get Started
+
+        <div className="flex *:flex-col md:flex-row gap-4 justify-center mt-6">
+
+        <button onClick={handleGetStarted} className="mt-8 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm cursor-pointer">
+          Get Questionnaire
         </button>
+        {/* <button onClick={() => navigate('/chat')} className="mt-8 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm cursor-pointer">
+          AI Assistant
+        </button> */}
+
+        <button
+  onClick={() => navigate("/recommendations")}
+  className="mt-8 inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-5 py-3 text-sm font-medium text-indigo-600 shadow-sm transition-all duration-200 hover:bg-indigo-50 hover:shadow-md cursor-pointer"
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="h-5 w-5 flex-shrink-0"
+  >
+    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+    <path d="M5 3v4" />
+    <path d="M7 5H3" />
+  </svg>
+
+  <span className="whitespace-nowrap">
+    Chat with Assistant
+  </span>
+</button>
+
+        <button onClick={() => navigate('/chat')} className="mt-8 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm cursor-pointer">
+          Connect to Mentor
+        </button>
+
+        </div>
+
+        
+
       </section>
 
       {/* Features */}
@@ -89,7 +128,7 @@ export default function Home() {
         </p>
 
         <button onClick={handleGetStarted} className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm">
-          Get Started
+          Get Questionnaire
         </button>
       </section>
 
