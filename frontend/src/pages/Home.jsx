@@ -1,142 +1,105 @@
 import React from "react";
 import Navbar from "../components/Navbar";
-import { useState } from "react";
-import LevelSelection from "./LevelSelection";
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from "react-router-dom";
+import { Users, Video, Calendar, ArrowRight, ShieldCheck, Briefcase, Sparkles } from "lucide-react";
+
 export default function Home() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
-
-  const handleGetStarted = () => {
-      
-    const token = localStorage.getItem('token');
-
-    if (token) {
-      navigate('/level-selection');
-     
-    }
-    else {
-      navigate('/login');
-    }
-  }
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
-
-      <Navbar/>
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      <Navbar />
 
       {/* Hero Section */}
-      <section className="flex flex-col items-center justify-center text-center px-6 py-28">
-        <span className="text-xs font-medium text-indigo-600 tracking-widest uppercase mb-4 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
-          Career Guidance Platform
-        </span>
-        <h1 className="text-4xl md:text-5xl font-bold leading-tight max-w-2xl text-slate-900 mt-2">
-          Discover the Right Career Path for You
-        </h1>
+      <section className="bg-white border-b border-slate-200 py-16 sm:py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-slate-900 leading-tight">
+            1-on-1 Mentorship & Career Guidance
+          </h1>
+          <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            Connect with experienced software engineers and industry mentors for scheduled 1:1 video guidance, code reviews, and interview preparation.
+          </p>
 
-        <p className="mt-5 text-slate-500 max-w-lg text-base leading-relaxed">
-          Personalized guidance based on your interests, skills, and goals.
-        </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              to="/mentors"
+              className="w-full sm:w-auto px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+            >
+              <Users className="w-4 h-4" />
+              <span>Browse Mentors</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
 
-
-        <div className="flex *:flex-col md:flex-row gap-4 justify-center mt-6">
-
-        <button onClick={handleGetStarted} className="mt-8 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm cursor-pointer">
-          Get Questionnaire
-        </button>
-        {/* <button onClick={() => navigate('/chat')} className="mt-8 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm cursor-pointer">
-          AI Assistant
-        </button> */}
-
-        <button
-  onClick={() => navigate("/recommendations")}
-  className="mt-8 inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-5 py-3 text-sm font-medium text-indigo-600 shadow-sm transition-all duration-200 hover:bg-indigo-50 hover:shadow-md cursor-pointer"
->
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="h-5 w-5 flex-shrink-0"
-  >
-    <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-    <path d="M5 3v4" />
-    <path d="M7 5H3" />
-  </svg>
-
-  <span className="whitespace-nowrap">
-    Chat with Assistant
-  </span>
-</button>
-
-        <button onClick={() => navigate('/chat')} className="mt-8 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm cursor-pointer">
-          Connect to Mentor
-        </button>
-
+            <Link
+              to="/level-selection"
+              className="w-full sm:w-auto px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+            >
+              <Sparkles className="w-4 h-4 text-slate-500" />
+              <span>Career Assessment</span>
+            </Link>
+          </div>
         </div>
-
-        
-
       </section>
 
-      {/* Features */}
-      <section className="px-6 pb-20 grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-
-        <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
-          <div className="w-9 h-9 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-center mb-4">
-            <span className="text-indigo-600 text-sm font-bold">01</span>
-          </div>
-          <h3 className="text-base font-semibold mb-2 text-slate-800">Smart Assessment</h3>
-          <p className="text-slate-500 text-sm leading-relaxed">
-            Answer a few questions and discover your strengths.
-          </p>
+      {/* 3 Step Workflow */}
+      <section className="py-14 max-w-5xl mx-auto px-4 sm:px-6 w-full">
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-slate-900">How it works</h2>
+          <p className="text-xs text-slate-500 mt-1">A simple, transparent process to get personalized guidance.</p>
         </div>
 
-        <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
-          <div className="w-9 h-9 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-center mb-4">
-            <span className="text-indigo-600 text-sm font-bold">02</span>
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-xl border border-slate-200">
+            <span className="text-xs font-bold text-slate-400">01</span>
+            <h3 className="text-sm font-bold text-slate-900 mt-2 mb-1.5">Find a Mentor</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Filter mentors by tech stack, experience, and domain expertise. Review their public profile and student feedback.
+            </p>
           </div>
-          <h3 className="text-base font-semibold mb-2 text-slate-800">Career Roadmaps</h3>
-          <p className="text-slate-500 text-sm leading-relaxed">
-            Get step-by-step guidance tailored to your goals.
-          </p>
-        </div>
 
-        <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200">
-          <div className="w-9 h-9 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-center mb-4">
-            <span className="text-indigo-600 text-sm font-bold">03</span>
+          <div className="bg-white p-6 rounded-xl border border-slate-200">
+            <span className="text-xs font-bold text-slate-400">02</span>
+            <h3 className="text-sm font-bold text-slate-900 mt-2 mb-1.5">Book Available Slot</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Choose an open time slot from the mentor's schedule and include your discussion topics or resume link.
+            </p>
           </div>
-          <h3 className="text-base font-semibold mb-2 text-slate-800">Expert Mentorship</h3>
-          <p className="text-slate-500 text-sm leading-relaxed">
-            Connect with mentors and attend live sessions.
-          </p>
-        </div>
 
+          <div className="bg-white p-6 rounded-xl border border-slate-200">
+            <span className="text-xs font-bold text-slate-400">03</span>
+            <h3 className="text-sm font-bold text-slate-900 mt-2 mb-1.5">1:1 Video & Real-Time Chat</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Join the live WebRTC session directly from your browser. Message back and forth and leave a review.
+            </p>
+          </div>
+        </div>
       </section>
 
-      {/* CTA */}
-      <section className="px-6 py-16 text-center border-t border-slate-200 bg-white">
-        <h2 className="text-2xl font-semibold text-slate-900">
-          Start your journey today
-        </h2>
+      {/* Mentor Callout */}
+      <section className="bg-white border-y border-slate-200 py-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Interested in mentoring?</h2>
+            <p className="text-xs text-slate-500 mt-1">
+              Set your own availability, help students transition into tech, and conduct 1-on-1 sessions.
+            </p>
+          </div>
 
-        <p className="text-slate-500 mt-3 text-sm">
-          Take the first step towards a better future.
-        </p>
-
-        <button onClick={handleGetStarted} className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors duration-200 shadow-sm">
-          Get Questionnaire
-        </button>
+          <Link
+            to="/register"
+            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium transition whitespace-nowrap"
+          >
+            Apply as a Mentor
+          </Link>
+        </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 py-6 text-center text-slate-400 text-xs bg-white">
-        © 2026 CareerGuide. All rights reserved.
+      <footer className="py-8 text-center text-xs text-slate-400 bg-slate-50 mt-auto">
+        © 2026 CareerSphere. All rights reserved.
       </footer>
-
     </div>
   );
 }

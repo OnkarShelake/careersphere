@@ -4,15 +4,25 @@ const messageSchema = new mongoose.Schema(
   {
     roomId: {
       type: String,
-      required: true
+      required: true,
+      index: true
     },
     message: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
     senderId: {
-      type: String,
-      required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      index: true
+    },
+    receiverId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+      default: null
     },
     senderName: {
       type: String,
@@ -22,6 +32,10 @@ const messageSchema = new mongoose.Schema(
       type: String,
       enum: ["sent", "delivered", "seen"],
       default: "sent"
+    },
+    seenAt: {
+      type: Date,
+      default: null
     }
   },
   { timestamps: true }

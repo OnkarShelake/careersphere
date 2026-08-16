@@ -1,120 +1,333 @@
-import React from "react";
+import React, { useState } from "react";
 import API from "../api/axios";
-import Navbar from "../components/Navbar";
-import { Eye, EyeOff } from 'lucide-react';
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-export default function Signup() {
-    const [showPassword, setShowPassword] = useState(false);
-    const [formData, setFormData] = useState({ name:'', email:'', password:''});
-    const navigate = useNavigate();
-    const handleRegister = async (e) =>{
-        e.preventDefault();
-        try {
+import { Eye, EyeOff, GraduationCap, Briefcase } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
-        const response = await API.post('/auth/register', formData);
-        console.log(response);
-        if(response.data && response.data.token){
-           await localStorage.setItem('token', response.data.token);
-           await localStorage.setItem('user', JSON.stringify(response.data.user));
-           
-            alert('Registration successful!');
-            navigate('/');
-        }
-        else{
-            alert('Registration failed. Please try again.');
-        }
-        } catch (error) {
-            console.error('Registration error:', error);
-        }
+export default function Register() {
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [role, setRole] = useState("student"); // 'student' | 'mentor'
+  const [loading, setLoading] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    // Mentor fields
+    title: "",
+    company: "",
+    experienceYears: "",
+    expertiseInput: "",
+    hourlyRate: 0,
+    // Student fields
+    educationLevel: "Undergraduate",
+    college: "",
+    skillsInput: "",
+    resumeUrl: "",
+    targetCareer: "",
+    bio: ""
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.password) {
+      toast.error("Please fill in all required fields.");
+      return;
     }
+
+    setLoading(true);
+    try {
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        role: role,
+        bio: formData.bio
+      };
+
+      if (role === "mentor") {
+        payload.title = formData.title;
+        payload.company = formData.company;
+        payload.experienceYears = Number(formData.experienceYears) || 0;
+        payload.expertise = formData.expertiseInput
+          ? formData.expertiseInput.split(",").map((s) => s.trim()).filter(Boolean)
+          : [];
+        payload.hourlyRate = Number(formData.hourlyRate) || 0;
+      } else {
+        payload.educationLevel = formData.educationLevel;
+        payload.college = formData.college;
+        payload.skills = formData.skillsInput
+          ? formData.skillsInput.split(",").map((s) => s.trim()).filter(Boolean)
+          : [];
+        payload.resumeUrl = formData.resumeUrl;
+        payload.targetCareer = formData.targetCareer;
+      }
+
+      const response = await API.post("/auth/register", payload);
+
+      if (response.data && response.data.token) {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+
+        toast.success(`Welcome, ${response.data.user.name}!`);
+
+        if (response.data.user.role === "mentor") {
+          navigate("/mentor");
+        } else {
+          navigate("/mentors");
+        }
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      toast.error(error.response?.data?.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
-      
-      {/* <Navbar /> */}
-      <div className="flex items-center justify-center pt-10 pb-4">
-        <span className="text-xl font-bold text-indigo-600 tracking-tight">CareerGuide</span>
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-center py-10 px-4 sm:px-6 font-sans">
+      <div className="sm:mx-auto sm:w-full sm:max-w-lg text-center mb-6">
+        <Link to="/" className="inline-flex items-center gap-2 font-bold text-lg text-slate-900">
+          <div className="w-6 h-6 rounded bg-slate-900 text-white font-bold text-xs flex items-center justify-center">
+            CS
+          </div>
+          <span>CareerSphere</span>
+        </Link>
+        <h2 className="mt-3 text-xl font-bold text-slate-900">Create an account</h2>
       </div>
 
-      <div className="flex flex-1 items-center justify-center px-6 py-8">
-        
-        <div className="w-full max-w-sm bg-white border border-slate-200 p-8 rounded-xl shadow-sm">
-          
-          <h2 className="text-xl font-semibold text-center text-slate-900 mb-1">
-            Create Account
-          </h2>
-          <p className="text-slate-500 text-sm text-center mb-6">Join CareerGuide today</p>
-
-          {/* Name */}
-          <form onSubmit={handleRegister} action="">
-
-            <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Full Name
-            </label>
-            <input onChange={(e)=> setFormData({...formData, name: e.target.value})}
-            value={formData.name}
-            name="name"
-              type="text"
-              placeholder="Enter your name"
-              className="w-full px-3 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 text-sm"
-            />
-          </div>
-
-          {/* Email */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Email
-            </label>
-            <input onChange={(e) => setFormData({...formData, email:e.target.value})}
-            name="email"
-            value={formData.email}
-              type="email"
-              placeholder="you@example.com"
-              className="w-full px-3 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 text-sm"
-            />
-          </div>
-
-          {/* Password */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              Password
-            </label>
-            <div className="flex relative">
-            <input name="password"
-            name="password"
-            value={formData.password}
-            onChange={(e) => setFormData({...formData, password:e.target.value})}
-            minLength={6}
-              type={showPassword ? "text" : "password"}
-              placeholder="Create a password"
-              className="w-full px-3 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 text-sm"
-            />
-            <button className="absolute right-3 top-2.5 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors duration-200" type="button" onClick={() => setShowPassword(!showPassword)}>
-              {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+      <div className="sm:mx-auto sm:w-full sm:max-w-lg">
+        <div className="bg-white py-6 px-6 border border-slate-200 rounded-xl sm:px-8">
+          {/* Role segmented toggle */}
+          <div className="grid grid-cols-2 gap-2 mb-5 p-1 bg-slate-100 rounded-lg text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => setRole("student")}
+              className={`py-2 rounded-md transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                role === "student" ? "bg-white text-slate-900 shadow-xs font-semibold" : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>Student</span>
             </button>
-            </div>
-            
+
+            <button
+              type="button"
+              onClick={() => setRole("mentor")}
+              className={`py-2 rounded-md transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                role === "mentor" ? "bg-white text-slate-900 shadow-xs font-semibold" : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              <span>Mentor</span>
+            </button>
           </div>
 
-          {/* Signup Button */}
-          <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium transition-colors duration-200 text-sm shadow-sm">
-            Sign Up
-          </button>
+          <form onSubmit={handleRegister} className="space-y-3.5 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-700 font-medium mb-1">Full Name *</label>
+                <input
+                  required
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="John Doe"
+                  className="w-full px-2.5 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+                />
+              </div>
 
+              <div>
+                <label className="block text-slate-700 font-medium mb-1">Email Address *</label>
+                <input
+                  required
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="john@example.com"
+                  className="w-full px-2.5 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-slate-700 font-medium mb-1">Password *</label>
+              <div className="relative">
+                <input
+                  required
+                  minLength={6}
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder="Minimum 6 characters"
+                  className="w-full px-2.5 py-1.5 rounded-md bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
+                >
+                  {showPassword ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Student Specific Fields */}
+            {role === "student" ? (
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-slate-600 mb-1">Education Level</label>
+                    <select
+                      name="educationLevel"
+                      value={formData.educationLevel}
+                      onChange={handleInputChange}
+                      className="w-full px-2 py-1.5 rounded-md bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                    >
+                      <option value="High School">High School (10th/12th)</option>
+                      <option value="Diploma">Diploma</option>
+                      <option value="Undergraduate">Undergraduate (B.Tech / BCA)</option>
+                      <option value="Postgraduate">Postgraduate (M.Tech / MCA)</option>
+                      <option value="Job Seeker">Early Career / Job Seeker</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 mb-1">College / Institution</label>
+                    <input
+                      type="text"
+                      name="college"
+                      value={formData.college}
+                      onChange={handleInputChange}
+                      placeholder="University name"
+                      className="w-full px-2 py-1.5 rounded-md bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1">Skills (Comma separated)</label>
+                  <input
+                    type="text"
+                    name="skillsInput"
+                    value={formData.skillsInput}
+                    onChange={handleInputChange}
+                    placeholder="e.g. Python, React, Data Structures"
+                    className="w-full px-2 py-1.5 rounded-md bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1">Resume Link (Google Drive, GitHub PDF URL)</label>
+                  <input
+                    type="url"
+                    name="resumeUrl"
+                    value={formData.resumeUrl}
+                    onChange={handleInputChange}
+                    placeholder="https://drive.google.com/..."
+                    className="w-full px-2 py-1.5 rounded-md bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-slate-600 mb-1">Professional Title *</label>
+                    <input
+                      required
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleInputChange}
+                      placeholder="e.g. Senior Software Engineer"
+                      className="w-full px-2 py-1.5 rounded-md bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 mb-1">Company *</label>
+                    <input
+                      required
+                      type="text"
+                      name="company"
+                      value={formData.company}
+                      onChange={handleInputChange}
+                      placeholder="e.g. Google, Microsoft"
+                      className="w-full px-2 py-1.5 rounded-md bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-slate-600 mb-1">Years of Experience</label>
+                    <input
+                      type="number"
+                      min="0"
+                      name="experienceYears"
+                      value={formData.experienceYears}
+                      onChange={handleInputChange}
+                      placeholder="e.g. 5"
+                      className="w-full px-2 py-1.5 rounded-md bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-600 mb-1">Rate ($ / session)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      name="hourlyRate"
+                      value={formData.hourlyRate}
+                      onChange={handleInputChange}
+                      placeholder="0 for free"
+                      className="w-full px-2 py-1.5 rounded-md bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-600 mb-1">Expertise (Comma separated) *</label>
+                  <input
+                    required
+                    type="text"
+                    name="expertiseInput"
+                    value={formData.expertiseInput}
+                    onChange={handleInputChange}
+                    placeholder="Full Stack, AI/ML, System Design"
+                    className="w-full px-2 py-1.5 rounded-md bg-white border border-slate-200 text-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900"
+                  />
+                </div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white py-2 rounded-md font-medium transition cursor-pointer disabled:opacity-50 mt-3"
+            >
+              {loading ? "Registering..." : `Register as ${role === "mentor" ? "Mentor" : "Student"}`}
+            </button>
           </form>
-          
 
-          {/* Footer */}
-          <p className="text-sm text-slate-500 text-center mt-5">
+          <div className="mt-5 text-center text-xs text-slate-500">
             Already have an account?{" "}
-            <span onClick={()=>navigate('/login')} className="text-indigo-600 cursor-pointer hover:text-indigo-700 font-medium transition-colors duration-200">
-              Sign In
-            </span>
-          </p>
-
+            <Link to="/login" className="text-slate-900 font-semibold hover:underline">
+              Sign in
+            </Link>
+          </div>
         </div>
-
       </div>
     </div>
   );

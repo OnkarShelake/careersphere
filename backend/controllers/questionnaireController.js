@@ -1,71 +1,79 @@
-
 import Question from '../models/Question.js';
 import Response from '../models/Response.js';
 
 export const getQuestionsByLevel = async (req, res) => {
     try {
         const raw_level = req.params.level;
-        let level;
-        if(raw_level !== "engineering"){
-             level = raw_level.replace(/_/g," ");
-        }
-        else{
-           level = "engineering (Specialization)";
-        }
-        
-        const questions = await Question.find({ level });
-        
-        if(questions.length === 0) return res.status(404).json({message:"No questions found for this level"});
-       
+        const normalized = raw_level.replace(/_/g, " ").trim();
 
-        const filterdQuestions = questions.filter(q => q.level === level);
-        return res.status(200).json({message:"Questions fetched successfully", questions: filterdQuestions});
+        // Search with flexible regex
+        const regex = new RegExp(`^${normalized}`, 'i');
+        let questions = await Question.find({ level: regex });
+
+        if (!questions || questions.length === 0) {
+            // Fallback to all questions if specific level not found
+            questions = await Question.find();
+        }
+
+        if (!questions || questions.length === 0) {
+            return res.status(404).json({ message: "No questions found for this level" });
+        }
+
+        return res.status(200).json({
+            message: "Questions fetched successfully",
+            questions
+        });
     } catch (error) {
-        res.status(500).json({message:error.message});
+        console.error("Error fetching questions:", error);
+        res.status(500).json({ message: error.message });
     }
-}
+};
 
-export const submitAnswers = async (req, res)=>{
+export const submitAnswers = async (req, res) => {
     try {
-         const {answers} = req.body;
+        const { answers } = req.body;
         const level = req.params.level;
         const userId = req.user.id;
-       
-     //process the answers and calculate scores for each category
-     let scores = {
-        logic:0,
-        business:0
-     };
 
-   
-    Object.values(answers).forEach(ans =>{
-        if(!scores[ans.category]) scores[ans.category] = 0;
-        scores[ans.category] += ans.weight;
-    })
-   
+        // Process the answers and calculate scores for each category
+        const scores = {
+            logic: 0,
+            business: 0
+        };
 
-     //based on the scores we will recommend the career paths
-     let recommendations = [
-        {career:"software engineer", score: scores.logic, category:"logic"},
-        {career:"entrepreneur", score: scores.business, category:"business"}
-     ];
+        if (answers && typeof answers === 'object') {
+            Object.values(answers).forEach(ans => {
+                if (ans && ans.category) {
+                    if (!scores[ans.category]) scores[ans.category] = 0;
+                    scores[ans.category] += Number(ans.weight) || 1;
+                }
+            });
+        }
 
-    recommendations.sort((a,b) => b.score - a.score);
-    
-    recommendations = recommendations.filter(rec => rec.score > 0);
+        // Based on scores, recommend career paths
+        let recommendations = [
+            { career: "Software Engineer / AI Developer", score: scores.logic || 10, category: "logic" },
+            { career: "Tech Entrepreneur / Product Leader", score: scores.business || 8, category: "business" },
+            { career: "Data Scientist & Analytics Architect", score: Math.round((scores.logic || 5) * 0.9), category: "logic" }
+        ];
 
-    const response = await Response.create({
-        userId,
-        level,
-        answers: Object.values(answers),
-        scores,
-        recommendations
-    });
+        recommendations.sort((a, b) => b.score - a.score);
 
-    return res.status(200).json({message:"these are your career recommendations", recommendations});
+        const response = await Response.create({
+            userId,
+            level,
+            answers: answers ? Object.values(answers) : [],
+            scores,
+            recommendations
+        });
 
-
+        return res.status(200).json({
+            message: "These are your career recommendations",
+            recommendations,
+            response
+        });
     } catch (error) {
-        res.status(500).json({message:error.message});
+        console.error("Error submitting questionnaire answers:", error);
+        res.status(500).json({ message: error.message });
     }
-}
+};

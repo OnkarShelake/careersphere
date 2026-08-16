@@ -1,120 +1,112 @@
-import React from "react";
-import Navbar from "../components/Navbar";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
-import { Eye, EyeOff } from 'lucide-react';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import API from "../api/axios";
 import { toast } from "react-toastify";
 
 export default function Login() {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    try {
-      const response = await API.post('/auth/login', formData);
-
-      if (response.data && response.data.token) {
-
-
-
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-          navigate("/");
-        
-
-      }
-
-      toast.success(response.data.message);
-
-    } catch (error) {
-      // console.log("error is appearing but not showing in toast", error.response?.data?.message);
-      // toast.error(response.data.message || "Login failed. Please try again.");
-
-      // console.log("Error:", error.response?.data?.message);
-
-      console.error(error);
-      console.error(error.stack);
-      toast.error(
-        error.response?.data?.message || "Login failed. Please try again."
-      );
+    if (!formData.email || !formData.password) {
+      toast.error("Please enter both email and password.");
+      return;
     }
 
+    setLoading(true);
+    try {
+      const response = await API.post("/auth/login", formData);
 
-  }
+      if (response.data && response.data.token) {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+
+        toast.success(`Welcome back, ${response.data.user.name}!`);
+
+        if (response.data.user.role === "mentor") {
+          navigate("/mentor");
+        } else {
+          navigate("/mentors");
+        }
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error(error.response?.data?.message || "Invalid email or password.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
-
-      {/* <Navbar /> */}
-      <div className="flex items-center justify-center pt-10 pb-4">
-        <span className="text-xl font-bold text-indigo-600 tracking-tight">CareerGuide</span>
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-center py-12 px-4 sm:px-6 font-sans">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
+        <Link to="/" className="inline-flex items-center gap-2 font-bold text-lg text-slate-900">
+          <div className="w-6 h-6 rounded bg-slate-900 text-white font-bold text-xs flex items-center justify-center">
+            CS
+          </div>
+          <span>CareerSphere</span>
+        </Link>
+        <h2 className="mt-4 text-xl font-bold text-slate-900">Sign in to your account</h2>
       </div>
 
-      <div className="flex flex-1 items-center justify-center px-6 py-8">
-
-        <div className="w-full max-w-sm bg-white border border-slate-200 p-8 rounded-xl shadow-sm">
-
-          <h2 className="text-xl font-semibold text-center text-slate-900 mb-1">
-            Welcome back
-          </h2>
-          <p className="text-slate-500 text-sm text-center mb-6">Sign in to your account</p>
-
-          {/* Email */}
-          <form onSubmit={handleLogin}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Email
-              </label>
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-6 border border-slate-200 rounded-xl sm:px-8">
+          <form onSubmit={handleLogin} className="space-y-4 text-xs">
+            <div>
+              <label className="block text-slate-700 font-medium mb-1">Email address</label>
               <input
+                required
                 name="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 type="email"
                 placeholder="you@example.com"
-                className="w-full px-3 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 text-sm"
+                className="w-full px-3 py-2 rounded-md bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition"
               />
             </div>
 
-            {/* Password */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                Password
-              </label>
-              <div className="flex relative">
+            <div>
+              <label className="block text-slate-700 font-medium mb-1">Password</label>
+              <div className="relative">
                 <input
+                  required
                   name="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  className="w-full px-3 py-2.5 rounded-lg bg-white border border-slate-300 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200 text-sm"
+                  placeholder="Enter password"
+                  className="w-full px-3 py-2 rounded-md bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 transition"
                 />
-                <button className="absolute right-3 top-2.5 cursor-pointer text-slate-400 hover:text-slate-600 transition-colors duration-200" type="button" onClick={() => setShowPassword(!showPassword)}>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
                   {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
               </div>
-
             </div>
 
-            {/* Login Button */}
-            <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium transition-colors duration-200 text-sm shadow-sm">
-              Sign In
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white py-2 rounded-md font-medium transition cursor-pointer disabled:opacity-50 mt-2"
+            >
+              {loading ? "Signing in..." : "Sign in"}
             </button>
-
           </form>
 
-          {/* Footer */}
-          <p className="text-sm text-slate-500 text-center mt-5">
+          <div className="mt-6 text-center text-xs text-slate-500">
             Don't have an account?{" "}
-            <span onClick={() => navigate('/register')} className="text-indigo-600 cursor-pointer hover:text-indigo-700 font-medium transition-colors duration-200">
-              Sign Up
-            </span>
-          </p>
-
+            <Link to="/register" className="text-slate-900 font-semibold hover:underline">
+              Sign up
+            </Link>
+          </div>
         </div>
-
       </div>
     </div>
   );

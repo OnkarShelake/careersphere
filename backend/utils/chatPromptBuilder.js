@@ -1,45 +1,53 @@
 export const buildChatPrompt = ({ previousReport, previousChat, studentProfile }) => {
-
-    const conversation = previousChat.messages
+    const conversation = (previousChat?.messages || [])
         .map(msg => {
             return `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`;
         })
         .join("\n\n");
 
-    return `
-You are an experienced AI Career Counselor.
+    const studentName = studentProfile?.name || "Student";
+    const education = studentProfile?.educationLevel ? `Education: ${studentProfile.educationLevel}` : "";
+    const skills = studentProfile?.skills?.length ? `Skills: ${studentProfile.skills.join(", ")}` : "";
+    const targetCareer = studentProfile?.targetCareer ? `Target Career: ${studentProfile.targetCareer}` : "";
 
-The student's name is ${studentProfile.name}.
+    const profileContext = [education, skills, targetCareer].filter(Boolean).join(" | ");
 
-You have already generated a career report for this student. Use that report as the primary context while answering.
-
-Guidelines:
-- Continue the conversation naturally.
-- Give personalized career guidance.
-- Stay consistent with the previous report unless the student explicitly says their interests have changed.
-- Be encouraging and practical.
-- Give specific advice whenever possible.
-- Keep answers concise but informative.
-- Format the response using Markdown when appropriate.
-
+    const reportSection = previousReport?.report
+        ? `
 ==========================
 PREVIOUS CAREER REPORT
 ==========================
-
 ${previousReport.report}
+`
+        : `
+==========================
+STUDENT CONTEXT
+==========================
+${profileContext || "General Career Mentorship & Guidance"}
+`;
+
+    return `
+You are an experienced, empathetic, and highly knowledgeable AI Career Counselor and Tech Industry Mentor.
+
+The student's name is ${studentName}.
+${profileContext ? `Student Profile: ${profileContext}` : ""}
+
+Guidelines:
+- Give clear, practical, and highly actionable career advice.
+- If asked about specific fields (e.g. Software Engineering, Data Science, AI, Product Management), provide structured roadmaps, essential skills, interview tips, project ideas, and industry best practices.
+- Be encouraging, concise, and structured (use bullet points and bold text where helpful).
+- Answer the student's questions directly and naturally.
+
+${reportSection}
 
 ==========================
-PREVIOUS CONVERSATION
+CONVERSATION HISTORY
 ==========================
-
 ${conversation}
 
 ==========================
 TASK
 ==========================
-
-Reply to the student's latest message while keeping the previous report and conversation in mind.
-
-Only respond as the AI Career Counselor.
+Reply to the student's latest message as their supportive AI Career Guide.
 `;
 };
