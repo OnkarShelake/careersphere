@@ -19,6 +19,7 @@ const VideoCall = ({ roomId, partnerName = "Peer", onEndCall }) => {
   const remoteVideoRef = useRef(null);
   const peerConnection = useRef(null);
   const localStreamRef = useRef(null);
+  const candidateQueue = useRef([]);
   const navigate = useNavigate();
 
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
@@ -28,7 +29,6 @@ const VideoCall = ({ roomId, partnerName = "Peer", onEndCall }) => {
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [callStatus, setCallStatus] = useState("Connecting...");
   const [hasRemoteStream, setHasRemoteStream] = useState(false);
-  const pendingCandidates = useRef([]);
 
   // In-Call Live Chat States
   const [showChat, setShowChat] = useState(false);
@@ -38,7 +38,6 @@ const VideoCall = ({ roomId, partnerName = "Peer", onEndCall }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const chatScrollRef = useRef(null);
 
-  // Keep showChatRef in sync with showChat state without triggering WebRTC re-runs
   useEffect(() => {
     showChatRef.current = showChat;
     if (showChat) {
@@ -106,52 +105,70 @@ const VideoCall = ({ roomId, partnerName = "Peer", onEndCall }) => {
     }
   };
 
-  // WebRTC Setup & Connection Handshake (Runs ONCE per room lifecycle)
+  // WebRTC Setup & Connection Handshake
   useEffect(() => {
     if (!roomId) return;
 
     let isSubscribed = true;
 
-    // Create RTCPeerConnection
+    // Create RTCPeerConnection with STUN servers
     const pc = new RTCPeerConnection({
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
         { urls: "stun:stun2.l.google.com:19302" },
         { urls: "stun:stun3.l.google.com:19302" },
-        { urls: "stun:stun4.l.google.com:19302" }
+        { urls: "stun:stun4.l.google.com:19302" },
+        { urls: "stun:global.stun.twilio.com:3478" }
       ],
       iceCandidatePoolSize: 10
     });
     peerConnection.current = pc;
 
+    // Helper: Flush queued ICE Candidates after RemoteDescription is set
+    const flushCandidates = async () => {
+      while (candidateQueue.current.length > 0) {
+        const candidate = candidateQueue.current.shift();
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+          console.warn("Flush candidate warning:", e);
+        }
+      }
+    };
+
     // Helper: Create Offer and Send
     const createAndSendOffer = async (isRestart = false) => {
-      if (!peerConnection.current) return;
+      if (!pc || pc.signalingState === "closed") return;
       try {
-        const offer = await peerConnection.current.createOffer({
+        setCallStatus("Calling...");
+        const offer = await pc.createOffer({
           iceRestart: isRestart,
           offerToReceiveAudio: true,
           offerToReceiveVideo: true
         });
-        await peerConnection.current.setLocalDescription(offer);
-        socket.emit("offer", { roomId, offer });
-        setCallStatus("Calling...");
+        await pc.setLocalDescription(offer);
+        socket.emit("offer", { roomId, offer: pc.localDescription });
       } catch (err) {
         console.error("Create offer error:", err);
       }
     };
 
-    // Remote Stream & Track Listener
+    // Remote Stream Track Listener
     pc.ontrack = (event) => {
-      const remoteStream = event.streams[0];
+      const [remoteStream] = event.streams;
       if (remoteVideoRef.current && remoteStream) {
         remoteVideoRef.current.srcObject = remoteStream;
         setHasRemoteStream(true);
         setCallStatus("Connected");
 
+        remoteVideoRef.current.play().catch(() => {});
+
         remoteStream.getVideoTracks().forEach((track) => {
-          track.onunmute = () => setHasRemoteStream(true);
+          track.onunmute = () => {
+            setHasRemoteStream(true);
+            setCallStatus("Connected");
+          };
           track.onmute = () => {};
           track.onended = () => setHasRemoteStream(false);
         });
@@ -165,9 +182,12 @@ const VideoCall = ({ roomId, partnerName = "Peer", onEndCall }) => {
         setCallStatus("Connected");
         setHasRemoteStream(true);
         optimizeSenders();
-      } else if (state === "disconnected" || state === "failed") {
+      } else if (state === "disconnected") {
         setCallStatus("Reconnecting...");
-        setHasRemoteStream(false);
+      } else if (state === "failed") {
+        setCallStatus("Reconnecting...");
+        // Auto attempt ICE restart
+        setTimeout(() => createAndSendOffer(true), 1500);
       }
     };
 
@@ -177,6 +197,9 @@ const VideoCall = ({ roomId, partnerName = "Peer", onEndCall }) => {
         setCallStatus("Connected");
         setHasRemoteStream(true);
         optimizeSenders();
+      } else if (iceState === "failed") {
+        setCallStatus("Reconnecting...");
+        setTimeout(() => createAndSendOffer(true), 1500);
       }
     };
 
@@ -230,28 +253,34 @@ const VideoCall = ({ roomId, partnerName = "Peer", onEndCall }) => {
 
     initLocalMedia();
 
-    // 2. Automatic Signaling Handlers
+    // 2. Automatic Handshake Listeners
     const handlePeerJoined = async () => {
-      // Another peer entered the room -> Automatically start connection offer
+      // Another peer entered the room -> Send offer
       await createAndSendOffer(false);
     };
 
     const handleOffer = async (offer) => {
       try {
-        if (!peerConnection.current) return;
-        await peerConnection.current.setRemoteDescription(new RTCSessionDescription(offer));
+        if (!pc || pc.signalingState === "closed") return;
 
-        for (const c of pendingCandidates.current) {
-          await peerConnection.current.addIceCandidate(c);
+        // If in wrong state to receive offer, roll back if possible
+        if (pc.signalingState !== "stable") {
+          await Promise.all([
+            pc.setLocalDescription({ type: "rollback" }).catch(() => {}),
+            pc.setRemoteDescription(new RTCSessionDescription(offer))
+          ]);
+        } else {
+          await pc.setRemoteDescription(new RTCSessionDescription(offer));
         }
-        pendingCandidates.current = [];
 
-        const answer = await peerConnection.current.createAnswer({
+        await flushCandidates();
+
+        const answer = await pc.createAnswer({
           offerToReceiveAudio: true,
           offerToReceiveVideo: true
         });
-        await peerConnection.current.setLocalDescription(answer);
-        socket.emit("answer", { roomId, answer });
+        await pc.setLocalDescription(answer);
+        socket.emit("answer", { roomId, answer: pc.localDescription });
         optimizeSenders();
       } catch (e) {
         console.error("Error handling offer:", e);
@@ -260,34 +289,33 @@ const VideoCall = ({ roomId, partnerName = "Peer", onEndCall }) => {
 
     const handleAnswer = async (answer) => {
       try {
-        if (!peerConnection.current) return;
-        await peerConnection.current.setRemoteDescription(new RTCSessionDescription(answer));
-
-        for (const c of pendingCandidates.current) {
-          await peerConnection.current.addIceCandidate(c);
+        if (!pc || pc.signalingState === "closed") return;
+        if (pc.signalingState === "have-local-offer") {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer));
+          await flushCandidates();
+          optimizeSenders();
         }
-        pendingCandidates.current = [];
-        optimizeSenders();
       } catch (e) {
         console.error("Error handling answer:", e);
       }
     };
 
     const handleIce = async (candidate) => {
+      if (!candidate) return;
       try {
-        if (peerConnection.current && peerConnection.current.remoteDescription) {
-          await peerConnection.current.addIceCandidate(new RTCIceCandidate(candidate));
+        if (pc && pc.remoteDescription && pc.remoteDescription.type) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
         } else {
-          pendingCandidates.current.push(candidate);
+          candidateQueue.current.push(candidate);
         }
       } catch (e) {
-        console.error("Error handling ICE:", e);
+        console.warn("Error handling ICE:", e);
       }
     };
 
     const handleEndCall = () => {
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
-      peerConnection.current?.close();
+      pc.close();
       if (onEndCall) onEndCall();
       else navigate("/my-sessions");
     };
@@ -325,7 +353,7 @@ const VideoCall = ({ roomId, partnerName = "Peer", onEndCall }) => {
       socket.off("load_messages", handleLoadMessages);
       socket.off("receive_message", handleReceiveMessage);
       localStreamRef.current?.getTracks().forEach((t) => t.stop());
-      peerConnection.current?.close();
+      pc.close();
     };
   }, [roomId, onEndCall, navigate, optimizeSenders]);
 
@@ -352,14 +380,14 @@ const VideoCall = ({ roomId, partnerName = "Peer", onEndCall }) => {
   const handleManualReconnect = async () => {
     if (!peerConnection.current) return;
     try {
+      setCallStatus("Calling...");
       const offer = await peerConnection.current.createOffer({
         iceRestart: true,
         offerToReceiveAudio: true,
         offerToReceiveVideo: true
       });
       await peerConnection.current.setLocalDescription(offer);
-      socket.emit("offer", { roomId, offer });
-      setCallStatus("Reconnecting...");
+      socket.emit("offer", { roomId, offer: peerConnection.current.localDescription });
     } catch (e) {
       console.error("Manual reconnect error:", e);
     }
@@ -444,7 +472,7 @@ const VideoCall = ({ roomId, partnerName = "Peer", onEndCall }) => {
           </div>
         </div>
 
-        {/* In-Call Live Chat Sidebar (Toggling this does NOT touch WebRTC or Streams) */}
+        {/* In-Call Live Chat Sidebar */}
         {showChat && (
           <aside className="w-80 sm:w-96 bg-slate-900 border-l border-slate-800 flex flex-col z-20 flex-shrink-0">
             {/* Chat Header */}
